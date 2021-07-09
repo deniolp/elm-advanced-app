@@ -1,6 +1,5 @@
 module Login exposing (..)
 
-import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -70,7 +69,3 @@ view model =
                 [ text "Login" ]
             ]
         ]
-
-
-main =
-    Browser.sandbox { init = initModel, update = update, view = view }
