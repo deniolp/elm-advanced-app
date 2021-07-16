@@ -46,9 +46,10 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         ChangePage page ->
-            { model
-                | page = page
-            }
+            Debug.log "Updated model"
+                { model
+                    | page = page
+                }
 
         LeaderBoardMsg lbMsg ->
             { model

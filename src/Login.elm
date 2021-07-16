@@ -35,11 +35,11 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         UsernameInput username ->
-            Debug.log "Input updated model"
+            Debug.log "Input username updated model"
                 { model | username = username }
 
         PasswordInput password ->
-            Debug.log "Input updated model"
+            Debug.log "Input password updated model"
                 { model | password = password }
 
 
@@ -48,7 +48,7 @@ update msg model =
 
 
 view : Model -> Html Msg
-view model =
+view _ =
     div []
         [ h3 [] [ text "Login Page.." ]
         , Html.form []

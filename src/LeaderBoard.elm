@@ -41,7 +41,8 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         QueryInput query ->
-            { model | query = query }
+            Debug.log "Input query updated model"
+                { model | query = query }
 
 
 
