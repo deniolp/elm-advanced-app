@@ -2,6 +2,7 @@ module Jokes exposing (..)
 
 import Browser
 import Html exposing (..)
+import Html.Events exposing (onClick)
 import Http
 
 
@@ -37,6 +38,7 @@ randomJoke =
 
 type Msg
     = Joke (Result Http.Error String)
+    | NewJoke
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -48,6 +50,9 @@ update msg _ =
         Joke (Err err) ->
             ( Debug.toString err, Cmd.none )
 
+        NewJoke ->
+            ( "fetching new joke", randomJoke )
+
 
 
 -- view
@@ -55,7 +60,13 @@ update msg _ =
 
 view : Model -> Html Msg
 view model =
-    div [] [ text model ]
+    div []
+        [ div [] [ text model ]
+        , button
+            [ onClick NewJoke
+            ]
+            [ text "Click" ]
+        ]
 
 
 
