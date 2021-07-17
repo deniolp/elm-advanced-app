@@ -2,9 +2,11 @@ module Jokes exposing (..)
 
 import Browser
 import Html exposing (..)
+import Html.Attributes exposing (required)
 import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (..)
+import Json.Decode.Pipeline as Pipeline exposing (hardcoded, optional, required)
 
 
 
@@ -15,6 +17,7 @@ type alias Response =
     { id : Int
     , joke : String
     , categories : List String
+    , likes : Int
     }
 
 
@@ -32,12 +35,23 @@ init _ =
     ( initModel, randomJoke )
 
 
+
+-- responseDecoder : Decoder Response
+-- responseDecoder =
+--     map3 Response
+--         (field "id" int)
+--         (field "joke" string)
+--         (field "categories" (list string))
+--         |> at [ "value" ]
+
+
 responseDecoder : Decoder Response
 responseDecoder =
-    map3 Response
-        (field "id" int)
-        (field "joke" string)
-        (field "categories" (list string))
+    Json.Decode.succeed Response
+        |> Pipeline.required "id" int
+        |> Pipeline.required "joke" string
+        |> Pipeline.optional "categories" (list string) []
+        |> Pipeline.hardcoded 0
         |> at [ "value" ]
 
 
@@ -62,7 +76,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg _ =
     case msg of
         Joke (Ok response) ->
-            ( Debug.toString response.id ++ " " ++ response.joke, Cmd.none )
+            ( Debug.toString response.id ++ " " ++ response.joke ++ " " ++ Debug.toString response.likes ++ " likes", Cmd.none )
 
         Joke (Err err) ->
             ( Debug.toString err, Cmd.none )
