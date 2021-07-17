@@ -11,6 +11,13 @@ import Json.Decode exposing (..)
 -- model
 
 
+type alias Response =
+    { id : Int
+    , joke : String
+    , categories : List String
+    }
+
+
 type alias Model =
     String
 
@@ -25,17 +32,21 @@ init _ =
     ( initModel, randomJoke )
 
 
+responseDecoder : Decoder Response
+responseDecoder =
+    map3 Response
+        (field "id" int)
+        (field "joke" string)
+        (field "categories" (list string))
+        |> at [ "value" ]
+
+
 randomJoke : Cmd Msg
 randomJoke =
     Http.get
         { url = "http://api.icndb.com/jokes/random"
-        , expect = Http.expectJson Joke decoder
+        , expect = Http.expectJson Joke responseDecoder
         }
-
-
-decoder : Decoder String
-decoder =
-    at [ "value", "joke" ] string
 
 
 
@@ -43,15 +54,15 @@ decoder =
 
 
 type Msg
-    = Joke (Result Http.Error String)
+    = Joke (Result Http.Error Response)
     | NewJoke
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg _ =
     case msg of
-        Joke (Ok joke) ->
-            ( joke, Cmd.none )
+        Joke (Ok response) ->
+            ( Debug.toString response.id ++ " " ++ response.joke, Cmd.none )
 
         Joke (Err err) ->
             ( Debug.toString err, Cmd.none )
