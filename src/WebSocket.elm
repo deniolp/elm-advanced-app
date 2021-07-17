@@ -3,7 +3,7 @@ port module WebSocket exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Events exposing (..)
-import LeaderBoard exposing (Model, Msg)
+import Json.Decode exposing (..)
 
 
 
@@ -107,6 +107,17 @@ view model =
 -- subscriptions
 
 
+decodeTime : String -> Msg
+decodeTime message =
+    decodeString (at [ "time" ] string) message
+        |> Result.withDefault "Error Decoding Time"
+        |> Time
+
+
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    messageReceiver Time
+subscriptions model =
+    if model.streamTime then
+        messageReceiver decodeTime
+
+    else
+        Sub.none
