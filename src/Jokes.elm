@@ -4,6 +4,7 @@ import Browser
 import Html exposing (..)
 import Html.Events exposing (onClick)
 import Http
+import Json.Decode exposing (..)
 
 
 
@@ -28,8 +29,13 @@ randomJoke : Cmd Msg
 randomJoke =
     Http.get
         { url = "http://api.icndb.com/jokes/random"
-        , expect = Http.expectString Joke
+        , expect = Http.expectJson Joke decoder
         }
+
+
+decoder : Decoder String
+decoder =
+    at [ "value", "joke" ] string
 
 
 

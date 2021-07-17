@@ -26,14 +26,14 @@ decoder =
     at [ "value", "joke" ] string
 
 
-jokeRsult : Result Error String
-jokeRsult =
+jokeResult : Result Error String
+jokeResult =
     decodeString decoder json
 
 
 main : Html msg
 main =
-    case jokeRsult of
+    case jokeResult of
         Ok joke ->
             text joke
 
