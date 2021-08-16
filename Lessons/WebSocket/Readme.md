@@ -14,7 +14,8 @@ How to play with it:
   
 * Clone this repo to your place
 * Do `npm i`
-* Go to the /Lessons/WebSocket directory
+* Go to the `/Lessons/WebSocket` directory
 * Make `elm make WebSocket.elm --output=elm.js`
-* Open index.html
+* Run `server.js` with node
+* Open `index.html`
 * **Voilà!**
