@@ -1,12 +1,12 @@
-module Jokes exposing (..)
+module Lessons.Decoder.Jokes exposing (..)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (required)
+import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Http
 import Json.Decode exposing (..)
-import Json.Decode.Pipeline as Pipeline exposing (hardcoded, optional, required)
+import Json.Decode.Pipeline as Pipeline exposing (..)
 
 
 
@@ -36,6 +36,7 @@ init _ =
 
 
 
+-- That is simple way:
 -- responseDecoder : Decoder Response
 -- responseDecoder =
 --     map3 Response
@@ -43,6 +44,7 @@ init _ =
 --         (field "joke" string)
 --         (field "categories" (list string))
 --         |> at [ "value" ]
+-- Below is way by using community package Json.Decode.Pipeline:
 
 
 responseDecoder : Decoder Response
@@ -50,7 +52,7 @@ responseDecoder =
     Json.Decode.succeed Response
         |> Pipeline.required "id" int
         |> Pipeline.required "joke" string
-        |> Pipeline.optional "categories" (list string) []
+        |> Pipeline.optional "categories" (Json.Decode.list string) []
         |> Pipeline.hardcoded 0
         |> at [ "value" ]
 

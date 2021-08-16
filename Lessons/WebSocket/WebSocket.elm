@@ -1,4 +1,4 @@
-port module WebSocket exposing (..)
+port module Lessons.WebSocket.WebSocket exposing (..)
 
 import Browser
 import Html exposing (..)

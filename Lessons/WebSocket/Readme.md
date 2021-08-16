@@ -9,11 +9,12 @@ In case of WS , you need this file: [WebSocket.elm](https://github.com/deniolp/e
 ---
 
 How to play with it:
-  You need Node.js in your system!
+  You need Node.js and Elm in your system!
   
   
 * Clone this repo to your place
 * Do `npm i`
-* Do `elm make src/WebSocket.elm --output=elm.js`
+* Go to the /Lessons/WebSocket directory
+* Make `elm make WebSocket.elm --output=elm.js`
 * Open index.html
 * **Voilà!**
