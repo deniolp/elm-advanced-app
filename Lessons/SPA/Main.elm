@@ -4,6 +4,8 @@ import Browser
 import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Main exposing (Page(..))
+import Maybe exposing (withDefault)
 import Url
 
 
@@ -30,12 +32,28 @@ main =
 type alias Model =
     { key : Nav.Key
     , url : Url.Url
+    , page : Page
+    }
+
+
+type Page
+    = LeaderBoard
+    | AddRunner
+    | Login
+    | NotFound
+
+
+initModel : Url.Url -> Nav.Key -> Model
+initModel url key =
+    { key = key
+    , url = url
+    , page = fragmentToPage (withDefault "" url.fragment)
     }
 
 
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
-    ( Model key url, Cmd.none )
+    ( initModel url key, Cmd.none )
 
 
 
@@ -53,8 +71,15 @@ update msg model =
         LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( model
-                    , Nav.pushUrl model.key (Url.toString url)
+                    let
+                        newModel =
+                            { model | page = fragmentToPage (withDefault "" url.fragment), url = url }
+                    in
+                    ( newModel
+                    , Nav.pushUrl model.key
+                        (newModel.page
+                            |> pageToFragment
+                        )
                     )
 
                 Browser.External href ->
@@ -63,10 +88,41 @@ update msg model =
                     )
 
         UrlChanged url ->
-            Debug.log "Updated model"
-                ( { model | url = url }
-                , Cmd.none
-                )
+            ( { model | url = url }
+            , Cmd.none
+            )
+
+
+pageToFragment : Page -> String
+pageToFragment page =
+    case page of
+        LeaderBoard ->
+            "#"
+
+        AddRunner ->
+            "#add"
+
+        Login ->
+            "#login"
+
+        NotFound ->
+            "#not-found"
+
+
+fragmentToPage : String -> Page
+fragmentToPage fragment =
+    case fragment of
+        "" ->
+            LeaderBoard
+
+        "add" ->
+            AddRunner
+
+        "login" ->
+            Login
+
+        _ ->
+            NotFound
 
 
 
@@ -76,13 +132,13 @@ update msg model =
 menu : Model -> Html Msg
 menu _ =
     header []
-        [ a [ href "/leader-board" ]
+        [ a [ href "#" ]
             [ text "LeaderBoard" ]
         , text " | "
-        , a [ href "/add-runner" ]
+        , a [ href "#add" ]
             [ text "AddRunner" ]
         , text " | "
-        , a [ href "/login" ]
+        , a [ href "#login" ]
             [ text "Login" ]
         ]
 
@@ -97,18 +153,18 @@ viewPage pageDescription =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "URL Interceptor"
+    { title = "First Try!"
     , body =
         [ let
             page =
-                case model.url.path of
-                    "/leader-board" ->
+                case model.page of
+                    LeaderBoard ->
                         viewPage "LeaderBoard Page"
 
-                    "/add-runner" ->
+                    AddRunner ->
                         viewPage "AddRunner Page"
 
-                    "/login" ->
+                    Login ->
                         viewPage "Login Page"
 
                     _ ->
