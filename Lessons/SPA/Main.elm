@@ -47,7 +47,7 @@ initModel : Url.Url -> Nav.Key -> Model
 initModel url key =
     { key = key
     , url = url
-    , page = fragmentToPage (withDefault "" url.fragment)
+    , page = url |> fragmentToPage
     }
 
 
@@ -73,13 +73,12 @@ update msg model =
                 Browser.Internal url ->
                     let
                         newModel =
-                            { model | page = fragmentToPage (withDefault "" url.fragment), url = url }
+                            { model
+                                | page = url |> fragmentToPage
+                            }
                     in
                     ( newModel
-                    , Nav.pushUrl model.key
-                        (newModel.page
-                            |> pageToFragment
-                        )
+                    , Nav.pushUrl model.key (newModel.page |> pageToFragment)
                     )
 
                 Browser.External href ->
@@ -88,9 +87,14 @@ update msg model =
                     )
 
         UrlChanged url ->
-            ( { model | url = url }
-            , Cmd.none
-            )
+            let
+                newModel =
+                    { model
+                        | page = url |> fragmentToPage
+                        , url = url
+                    }
+            in
+            ( newModel, Cmd.none )
 
 
 pageToFragment : Page -> String
@@ -109,9 +113,9 @@ pageToFragment page =
             "#not-found"
 
 
-fragmentToPage : String -> Page
-fragmentToPage fragment =
-    case fragment of
+fragmentToPage : Url.Url -> Page
+fragmentToPage url =
+    case withDefault "" url.fragment of
         "" ->
             LeaderBoard
 
@@ -168,7 +172,7 @@ view model =
                         viewPage "Login Page"
 
                     _ ->
-                        viewPage "LeaderBoard Page"
+                        viewPage "Not Found Page"
           in
           div []
             [ menu model
