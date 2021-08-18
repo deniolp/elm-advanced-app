@@ -1,8 +1,26 @@
 module SPA.Main exposing (..)
 
 import Browser
+import Browser.Navigation as Nav
 import Html exposing (..)
-import Html.Events exposing (..)
+import Html.Attributes exposing (..)
+import Url
+
+
+
+-- main
+
+
+main : Program () Model Msg
+main =
+    Browser.application
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        , onUrlRequest = LinkClicked
+        , onUrlChange = UrlChanged
+        }
 
 
 
@@ -10,26 +28,14 @@ import Html.Events exposing (..)
 
 
 type alias Model =
-    { page : Page
+    { key : Nav.Key
+    , url : Url.Url
     }
 
 
-type Page
-    = LeaderBoard
-    | AddRunner
-    | Login
-    | NotFound
-
-
-initModel : Model
-initModel =
-    { page = LeaderBoard
-    }
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( initModel, Cmd.none )
+init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init _ url key =
+    ( Model key url, Cmd.none )
 
 
 
@@ -37,14 +43,30 @@ init _ =
 
 
 type Msg
-    = Navigate Page
+    = LinkClicked Browser.UrlRequest
+    | UrlChanged Url.Url
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Navigate page ->
-            ( { model | page = page }, Cmd.none )
+        LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                    ( model
+                    , Nav.pushUrl model.key (Url.toString url)
+                    )
+
+                Browser.External href ->
+                    ( model
+                    , Nav.load href
+                    )
+
+        UrlChanged url ->
+            Debug.log "Updated model"
+                ( { model | url = url }
+                , Cmd.none
+                )
 
 
 
@@ -54,13 +76,13 @@ update msg model =
 menu : Model -> Html Msg
 menu _ =
     header []
-        [ a [ onClick (Navigate LeaderBoard) ]
+        [ a [ href "/leader-board" ]
             [ text "LeaderBoard" ]
         , text " | "
-        , a [ onClick (Navigate AddRunner) ]
+        , a [ href "/add-runner" ]
             [ text "AddRunner" ]
         , text " | "
-        , a [ onClick (Navigate Login) ]
+        , a [ href "/login" ]
             [ text "Login" ]
         ]
 
@@ -73,48 +95,38 @@ viewPage pageDescription =
         ]
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    let
-        page =
-            case model.page of
-                LeaderBoard ->
-                    viewPage "LeaderBoard Page"
+    { title = "URL Interceptor"
+    , body =
+        [ let
+            page =
+                case model.url.path of
+                    "/leader-board" ->
+                        viewPage "LeaderBoard Page"
 
-                AddRunner ->
-                    viewPage "AddRunner Page"
+                    "/add-runner" ->
+                        viewPage "AddRunner Page"
 
-                Login ->
-                    viewPage "Login Page"
+                    "/login" ->
+                        viewPage "Login Page"
 
-                NotFound ->
-                    viewPage "NotFound Page"
-    in
-    div []
-        [ menu model
-        , hr [] []
-        , page
+                    _ ->
+                        viewPage "LeaderBoard Page"
+          in
+          div []
+            [ menu model
+            , hr [] []
+            , page
+            ]
         ]
+    }
 
 
 
--- subscriptions
+--subscriptions
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.none
-
-
-
--- main
-
-
-main : Program () Model Msg
-main =
-    Browser.element
-        { init = init
-        , update = update
-        , subscriptions = subscriptions
-        , view = view
-        }
