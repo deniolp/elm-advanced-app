@@ -1,4 +1,4 @@
-module Ports.Main exposing (..)
+port module Ports.Main exposing (..)
 
 import Browser
 import Html exposing (..)
@@ -68,21 +68,20 @@ update msg model =
             ( { model | name = name }, Cmd.none )
 
         SaveCustomer ->
-            let
-                newCustomer =
-                    Customer model.nextId model.name
-
-                newCustomers =
-                    newCustomer :: model.customers
-
-                newModel =
-                    { model
-                        | customers = newCustomers
-                        , nextId = model.nextId + 1
-                        , name = ""
-                    }
-            in
-            ( newModel, Cmd.none )
+            -- let
+            --     newCustomer =
+            --         Customer model.nextId model.name
+            --     newCustomers =
+            --         newCustomer :: model.customers
+            --     newModel =
+            --         { model
+            --             | customers = newCustomers
+            --             , nextId = model.nextId + 1
+            --             , name = ""
+            --         }
+            -- in
+            -- ( newModel, Cmd.none )
+            ( model, addCustomer model.name )
 
 
 
@@ -130,3 +129,10 @@ viewCustomer customer =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.none
+
+
+
+--ports
+
+
+port addCustomer : String -> Cmd msg
