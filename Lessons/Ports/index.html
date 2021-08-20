@@ -10,11 +10,25 @@
 <body>
   <div id="myapp"></div>
   <script src="bundle.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="appfb.js"></script>
+
   <script>
-    const app = Elm.Ports.Main.init({
+    const elmApp = Elm.Ports.Main.init({
 	    node: document.getElementById(`myapp`)
     });
-    app.ports.addCustomer.subscribe((customerName) => console.log(customerName));
+    
+    elmApp.ports.addCustomer.subscribe((customerName) => {
+      console.log(customerName);
+      addCustomer({name: customerName})
+        .then((response) => {
+          console.log("Saved!");
+        }, (err) => {
+          console.log("error:", err);
+        });
+    });
   </script>
+
 </body>
 </html>
