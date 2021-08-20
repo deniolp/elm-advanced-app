@@ -25,7 +25,7 @@ main =
 
 
 type alias Customer =
-    { id : Int
+    { id : String
     , name : String
     }
 
@@ -60,6 +60,7 @@ type Msg
     = NameInput String
     | SaveCustomer
     | CustomerSaved String
+    | CustomerAdded Customer
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,6 +74,13 @@ update msg model =
 
         CustomerSaved _ ->
             ( { model | name = "" }, Cmd.none )
+
+        CustomerAdded customer ->
+            let
+                newCustomers =
+                    customer :: model.customers
+            in
+            ( { model | customers = newCustomers }, Cmd.none )
 
 
 
@@ -119,7 +127,10 @@ viewCustomer customer =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    customerSaved CustomerSaved
+    Sub.batch
+        [ customerSaved CustomerSaved
+        , newCustomer CustomerAdded
+        ]
 
 
 
@@ -130,3 +141,6 @@ port addCustomer : String -> Cmd msg
 
 
 port customerSaved : (String -> msg) -> Sub msg
+
+
+port newCustomer : (Customer -> msg) -> Sub msg
