@@ -18,12 +18,13 @@
     const elmApp = Elm.Ports.Main.init({
 	    node: document.getElementById(`myapp`)
     });
-    
+
     elmApp.ports.addCustomer.subscribe((customerName) => {
       console.log(customerName);
       addCustomer({name: customerName})
         .then((response) => {
           console.log("Saved!");
+          elmApp.ports.customerSaved.send(response.key);
         }, (err) => {
           console.log("error:", err);
         });

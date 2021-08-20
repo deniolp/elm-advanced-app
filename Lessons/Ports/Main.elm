@@ -59,6 +59,7 @@ init _ =
 type Msg
     = NameInput String
     | SaveCustomer
+    | CustomerSaved String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -68,20 +69,10 @@ update msg model =
             ( { model | name = name }, Cmd.none )
 
         SaveCustomer ->
-            -- let
-            --     newCustomer =
-            --         Customer model.nextId model.name
-            --     newCustomers =
-            --         newCustomer :: model.customers
-            --     newModel =
-            --         { model
-            --             | customers = newCustomers
-            --             , nextId = model.nextId + 1
-            --             , name = ""
-            --         }
-            -- in
-            -- ( newModel, Cmd.none )
             ( model, addCustomer model.name )
+
+        CustomerSaved _ ->
+            ( { model | name = "" }, Cmd.none )
 
 
 
@@ -128,7 +119,7 @@ viewCustomer customer =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    customerSaved CustomerSaved
 
 
 
@@ -136,3 +127,6 @@ subscriptions _ =
 
 
 port addCustomer : String -> Cmd msg
+
+
+port customerSaved : (String -> msg) -> Sub msg
