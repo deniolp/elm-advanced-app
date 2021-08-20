@@ -35,6 +35,18 @@
       const customer = Object.assign({id: data.key}, data.val());
       elmApp.ports.newCustomer.send(customer);
     });
+
+    elmApp.ports.deleteCustomer.subscribe((customer) => {
+      deleteCustomer(customer)
+        .then((response) => {
+        }, (err) => {
+          console.log("error:", err);
+        });
+    });
+
+    listener.on("child_removed", (data) => {
+      elmApp.ports.customerDeleted.send(data.key);
+    });
   </script>
 
 </body>
