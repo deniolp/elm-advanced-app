@@ -12,6 +12,7 @@ import Html.Events exposing (..)
 type alias Model =
     { username : String
     , password : String
+    , error : Maybe String
     }
 
 
@@ -19,7 +20,13 @@ initModel : Model
 initModel =
     { username = ""
     , password = ""
+    , error = Nothing
     }
+
+
+init : ( Model, Cmd Msg )
+init =
+    ( initModel, Cmd.none )
 
 
 
@@ -29,18 +36,27 @@ initModel =
 type Msg
     = UsernameInput String
     | PasswordInput String
+    | Submit
+    | Error String
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         UsernameInput username ->
             Debug.log "Input username updated model"
-                { model | username = username }
+                ( { model | username = username }, Cmd.none )
 
         PasswordInput password ->
             Debug.log "Input password updated model"
-                { model | password = password }
+                ( { model | password = password }, Cmd.none )
+
+        Submit ->
+            ( model, Cmd.none )
+
+        Error error ->
+            Debug.log "Error updated model"
+                ( { model | error = Just error }, Cmd.none )
 
 
 
@@ -48,24 +64,51 @@ update msg model =
 
 
 view : Model -> Html Msg
-view _ =
-    div []
-        [ h3 [] [ text "Login Page.." ]
-        , Html.form []
-            [ input
-                [ type_ "text"
-                , onInput UsernameInput
-                , placeholder "username"
+view model =
+    div [ class "main" ]
+        [ errorPanel model.error
+        , loginForm model
+        ]
+
+
+loginForm : Model -> Html Msg
+loginForm model =
+    Html.form [ class "add-runner", onSubmit Submit ]
+        [ fieldset []
+            [ legend [] [ text "Login" ]
+            , div []
+                [ label [] [ text "User Name" ]
+                , input
+                    [ type_ "text"
+                    , value model.username
+                    , onInput UsernameInput
+                    ]
+                    []
                 ]
-                []
-            , input
-                [ type_ "password"
-                , onInput PasswordInput
-                , placeholder "password"
+            , div []
+                [ label [] [ text "Password" ]
+                , input
+                    [ type_ "password"
+                    , value model.password
+                    , onInput PasswordInput
+                    ]
+                    []
                 ]
-                []
-            , input
-                [ type_ "submit" ]
-                [ text "Login" ]
+            , div []
+                [ label [] []
+                , button
+                    [ type_ "submit" ]
+                    [ text "Login" ]
+                ]
             ]
         ]
+
+
+errorPanel : Maybe String -> Html a
+errorPanel error =
+    case error of
+        Nothing ->
+            text ""
+
+        Just msg ->
+            div [ class "error" ] [ text msg ]
