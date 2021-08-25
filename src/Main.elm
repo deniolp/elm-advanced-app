@@ -1,11 +1,26 @@
 module Main exposing (..)
 
+-- import LeaderBoard
+-- import Login
+
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import LeaderBoard
-import Login
+
+
+
+-- main
+
+
+main : Program () Model Msg
+main =
+    Browser.element
+        { init = init
+        , update = update
+        , subscriptions = subscriptions
+        , view = view
+        }
 
 
 
@@ -14,22 +29,33 @@ import Login
 
 type alias Model =
     { page : Page
-    , leaderBoard : LeaderBoard.Model
-    , login : Login.Model
+
+    -- , leaderBoard : LeaderBoard.Model
+    -- , login : Login.Model
     }
 
 
 type Page
-    = LoginPage
-    | LeaderBoardPage
+    = NotFound
+
+
+
+-- | LeaderBoardPage
+-- | LoginPage
 
 
 initModel : Model
 initModel =
-    { page = LeaderBoardPage
-    , leaderBoard = LeaderBoard.initModel
-    , login = Login.initModel
+    { page = NotFound
+
+    -- , leaderBoard = LeaderBoard.initModel
+    -- , login = Login.initModel
     }
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( initModel, Cmd.none )
 
 
 
@@ -38,33 +64,36 @@ initModel =
 
 type Msg
     = ChangePage Page
-    | LeaderBoardMsg LeaderBoard.Msg
-    | LoginMsg Login.Msg
 
 
-update : Msg -> Model -> Model
+
+-- | LeaderBoardMsg LeaderBoard.Msg
+-- | LoginMsg Login.Msg
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ChangePage page ->
             Debug.log "Updated model"
-                { model
+                ( { model
                     | page = page
-                }
-
-        LeaderBoardMsg lbMsg ->
-            { model
-                | leaderBoard =
-                    LeaderBoard.update lbMsg model.leaderBoard
-            }
-
-        LoginMsg loginMsg ->
-            { model
-                | login =
-                    Login.update loginMsg model.login
-            }
+                  }
+                , Cmd.none
+                )
 
 
 
+-- LeaderBoardMsg lbMsg ->
+--     { model
+--         | leaderBoard =
+--             LeaderBoard.update lbMsg model.leaderBoard
+--     }
+-- LoginMsg loginMsg ->
+--     { model
+--         | login =
+--             Login.update loginMsg model.login
+--     }
 -- view
 
 
@@ -73,33 +102,43 @@ view model =
     let
         page =
             case model.page of
-                LeaderBoardPage ->
-                    Html.map LeaderBoardMsg
-                        (LeaderBoard.view model.leaderBoard)
+                NotFound ->
+                    div [ class "main" ]
+                        [ h1 [] [ text "Page not found" ]
+                        ]
 
-                LoginPage ->
-                    Html.map LoginMsg
-                        (Login.view model.login)
+        -- LeaderBoardPage ->
+        --     Html.map LeaderBoardMsg
+        --         (LeaderBoard.view model.leaderBoard)
+        -- LoginPage ->
+        --     Html.map LoginMsg
+        --         (Login.view model.login)
     in
     div []
-        [ div []
-            [ a
-                [ href "#"
-                , onClick (ChangePage LeaderBoardPage)
-                ]
-                [ text "LeaderBoard" ]
-            , span [] [ text " | " ]
-            , a
-                [ href "#"
-                , onClick (ChangePage LoginPage)
-                ]
-                [ text "Login" ]
-            , hr [] []
-            , page
+        [ pageHeader model
+        , page
+        ]
+
+
+pageHeader : Model -> Html Msg
+pageHeader _ =
+    header []
+        [ a [ href "#/" ] [ text "Race Results" ]
+        , ul []
+            [ li []
+                [ a [ href "#" ] [ text "Link" ] ]
+            ]
+        , ul []
+            [ li []
+                [ a [ href "#" ] [ text "Login" ] ]
             ]
         ]
 
 
-main : Program () Model Msg
-main =
-    Browser.sandbox { init = initModel, update = update, view = view }
+
+-- subscriptions
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none
