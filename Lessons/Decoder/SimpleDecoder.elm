@@ -1,4 +1,4 @@
-module Lessons.Decoder.SimpleDecoder exposing (..)
+module Decoder.SimpleDecoder exposing (..)
 
 import Debug exposing (toString)
 import Html exposing (..)

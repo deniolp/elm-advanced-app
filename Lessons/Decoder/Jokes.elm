@@ -1,4 +1,4 @@
-module Lessons.Decoder.Jokes exposing (..)
+module Decoder.Jokes exposing (..)
 
 import Browser
 import Html exposing (..)
