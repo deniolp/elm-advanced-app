@@ -5,7 +5,11 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import LeaderBoard
+import Login
 import Maybe exposing (withDefault)
+import Runner
+import Tuple exposing (first)
 import Url
 
 
@@ -33,9 +37,9 @@ type alias Model =
     { page : Page
     , key : Nav.Key
     , url : Url.Url
-
-    -- , leaderBoard : LeaderBoard.Model
-    -- , login : Login.Model
+    , leaderBoard : LeaderBoard.Model
+    , login : Login.Model
+    , runner : Runner.Model
     }
 
 
@@ -51,9 +55,9 @@ initModel url key =
     { key = key
     , url = url
     , page = url |> fragmentToPage
-
-    -- , leaderBoard = LeaderBoard.initModel
-    -- , login = Login.initModel
+    , leaderBoard = LeaderBoard.initModel
+    , login = Login.initModel
+    , runner = Runner.initModel
     }
 
 
@@ -67,14 +71,11 @@ init _ url key =
 
 
 type Msg
-    = ChangePage Page
-    | LinkClicked Browser.UrlRequest
+    = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
-
-
-
--- | LeaderBoardMsg LeaderBoard.Msg
--- | LoginMsg Login.Msg
+    | LeaderBoardMsg LeaderBoard.Msg
+    | LoginMsg Login.Msg
+    | RunnerMsg Runner.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -108,13 +109,35 @@ update msg model =
             in
             ( newModel, Cmd.none )
 
-        ChangePage page ->
-            Debug.log "Updated model"
-                ( { model
-                    | page = page
-                  }
-                , Cmd.none
-                )
+        LeaderBoardMsg lbMsg ->
+            let
+                newModel =
+                    { model
+                        | leaderBoard =
+                            first (LeaderBoard.update lbMsg model.leaderBoard)
+                    }
+            in
+            ( newModel, Cmd.none )
+
+        LoginMsg loginMsg ->
+            let
+                newModel =
+                    { model
+                        | login =
+                            first (Login.update loginMsg model.login)
+                    }
+            in
+            ( newModel, Cmd.none )
+
+        RunnerMsg runnerMsg ->
+            let
+                newModel =
+                    { model
+                        | runner =
+                            first (Runner.update runnerMsg model.runner)
+                    }
+            in
+            ( newModel, Cmd.none )
 
 
 pageToFragment : Page -> String
@@ -150,16 +173,6 @@ fragmentToPage url =
 
 
 
--- LeaderBoardMsg lbMsg ->
---     { model
---         | leaderBoard =
---             LeaderBoard.update lbMsg model.leaderBoard
---     }
--- LoginMsg loginMsg ->
---     { model
---         | login =
---             Login.update loginMsg model.login
---     }
 -- view
 
 
@@ -176,17 +189,16 @@ view model =
                             ]
 
                     LeaderBoardPage ->
-                        text "k"
+                        Html.map LeaderBoardMsg
+                            (LeaderBoard.view model.leaderBoard)
 
-                    -- Html.map LeaderBoardMsg
-                    --     (LeaderBoard.view model.leaderBoard)
                     LoginPage ->
-                        text "j"
+                        Html.map LoginMsg
+                            (Login.view model.login)
 
-                    -- Html.map LoginMsg
-                    --     (Login.view model.login)
                     AddRunnerPage ->
-                        text "l"
+                        Html.map RunnerMsg
+                            (Runner.view model.runner)
           in
           div []
             [ pageHeader model
@@ -199,14 +211,14 @@ view model =
 pageHeader : Model -> Html Msg
 pageHeader _ =
     header []
-        [ a [ href "#/" ] [ text "Race Results" ]
+        [ a [ href "#" ] [ text "Race Results" ]
         , ul []
             [ li []
-                [ a [ href "#" ] [ text "Link" ] ]
+                [ a [ href "#add" ] [ text "Add Runner" ] ]
             ]
         , ul []
             [ li []
-                [ a [ href "#" ] [ text "Login" ] ]
+                [ a [ href "#login" ] [ text "Login" ] ]
             ]
         ]
 
