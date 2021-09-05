@@ -81,7 +81,7 @@ view model =
     div [ class "main" ]
         [ errorPanel model.error
         , searchForm model.query
-        , runners model
+        , runnersTable model
         ]
 
 
@@ -112,9 +112,9 @@ searchForm query =
         ]
 
 
-runners : Model -> Html Msg
-runners model =
-    model.runners
+runnersTable : Model -> Html Msg
+runnersTable { runners } =
+    runners
         |> List.map runner
         |> tbody []
         |> (\t -> [ runnersHeader, t ])
