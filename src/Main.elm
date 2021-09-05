@@ -1,12 +1,12 @@
 module Main exposing (..)
 
--- import LeaderBoard
--- import Login
-
 import Browser
+import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Maybe exposing (withDefault)
+import Url
 
 
 
@@ -15,11 +15,13 @@ import Html.Events exposing (..)
 
 main : Program () Model Msg
 main =
-    Browser.element
+    Browser.application
         { init = init
         , update = update
         , subscriptions = subscriptions
         , view = view
+        , onUrlRequest = LinkClicked
+        , onUrlChange = UrlChanged
         }
 
 
@@ -29,6 +31,8 @@ main =
 
 type alias Model =
     { page : Page
+    , key : Nav.Key
+    , url : Url.Url
 
     -- , leaderBoard : LeaderBoard.Model
     -- , login : Login.Model
@@ -37,25 +41,25 @@ type alias Model =
 
 type Page
     = NotFound
+    | LeaderBoardPage
+    | LoginPage
+    | AddRunnerPage
 
 
-
--- | LeaderBoardPage
--- | LoginPage
-
-
-initModel : Model
-initModel =
-    { page = NotFound
+initModel : Url.Url -> Nav.Key -> Model
+initModel url key =
+    { key = key
+    , url = url
+    , page = url |> fragmentToPage
 
     -- , leaderBoard = LeaderBoard.initModel
     -- , login = Login.initModel
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( initModel, Cmd.none )
+init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init _ url key =
+    ( initModel url key, Cmd.none )
 
 
 
@@ -64,6 +68,8 @@ init _ =
 
 type Msg
     = ChangePage Page
+    | LinkClicked Browser.UrlRequest
+    | UrlChanged Url.Url
 
 
 
@@ -74,6 +80,34 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        LinkClicked urlRequest ->
+            case urlRequest of
+                Browser.Internal url ->
+                    let
+                        newModel =
+                            { model
+                                | page = url |> fragmentToPage
+                            }
+                    in
+                    ( newModel
+                    , Nav.pushUrl model.key (newModel.page |> pageToFragment)
+                    )
+
+                Browser.External href ->
+                    ( model
+                    , Nav.load href
+                    )
+
+        UrlChanged url ->
+            let
+                newModel =
+                    { model
+                        | page = url |> fragmentToPage
+                        , url = url
+                    }
+            in
+            ( newModel, Cmd.none )
+
         ChangePage page ->
             Debug.log "Updated model"
                 ( { model
@@ -81,6 +115,38 @@ update msg model =
                   }
                 , Cmd.none
                 )
+
+
+pageToFragment : Page -> String
+pageToFragment page =
+    case page of
+        LeaderBoardPage ->
+            "#"
+
+        AddRunnerPage ->
+            "#add"
+
+        LoginPage ->
+            "#login"
+
+        NotFound ->
+            "#not-found"
+
+
+fragmentToPage : Url.Url -> Page
+fragmentToPage url =
+    case withDefault "" url.fragment of
+        "" ->
+            LeaderBoardPage
+
+        "add" ->
+            AddRunnerPage
+
+        "login" ->
+            LoginPage
+
+        _ ->
+            NotFound
 
 
 
@@ -97,27 +163,37 @@ update msg model =
 -- view
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    let
-        page =
-            case model.page of
-                NotFound ->
-                    div [ class "main" ]
-                        [ h1 [] [ text "Page not found" ]
-                        ]
+    { title = "First Try!"
+    , body =
+        [ let
+            page =
+                case model.page of
+                    NotFound ->
+                        div [ class "main" ]
+                            [ h1 [] [ text "Page not found" ]
+                            ]
 
-        -- LeaderBoardPage ->
-        --     Html.map LeaderBoardMsg
-        --         (LeaderBoard.view model.leaderBoard)
-        -- LoginPage ->
-        --     Html.map LoginMsg
-        --         (Login.view model.login)
-    in
-    div []
-        [ pageHeader model
-        , page
+                    LeaderBoardPage ->
+                        text "k"
+
+                    -- Html.map LeaderBoardMsg
+                    --     (LeaderBoard.view model.leaderBoard)
+                    LoginPage ->
+                        text "j"
+
+                    -- Html.map LoginMsg
+                    --     (Login.view model.login)
+                    AddRunnerPage ->
+                        text "l"
+          in
+          div []
+            [ pageHeader model
+            , page
+            ]
         ]
+    }
 
 
 pageHeader : Model -> Html Msg
