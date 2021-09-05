@@ -4,4 +4,4 @@ node_modules
 elm.js
 .DS_Store
 Lessons/Ports/bundle.js
-src/dist/bundle.js
+dist/bundle.js
