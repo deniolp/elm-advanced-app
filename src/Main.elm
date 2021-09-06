@@ -49,20 +49,35 @@ type Page
     | AddRunnerPage
 
 
-initModel : Url.Url -> Nav.Key -> Model
-initModel url key =
-    { key = key
-    , url = url
-    , page = url |> fragmentToPage
-    , leaderBoard = LeaderBoard.initModel
-    , login = Login.initModel
-    , runner = Runner.initModel
-    }
-
-
 init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init _ url key =
-    ( initModel url key, Cmd.none )
+    let
+        ( leaderBoardInitModel, leaderBoardCmd ) =
+            LeaderBoard.init
+
+        ( loginInitModel, loginCmd ) =
+            Login.init
+
+        ( runnerInitModel, runnerCmd ) =
+            Runner.init
+
+        initModel =
+            { key = key
+            , url = url
+            , page = url |> fragmentToPage
+            , leaderBoard = leaderBoardInitModel
+            , login = loginInitModel
+            , runner = runnerInitModel
+            }
+
+        cmds =
+            Cmd.batch
+                [ Cmd.map LeaderBoardMsg leaderBoardCmd
+                , Cmd.map LoginMsg loginCmd
+                , Cmd.map RunnerMsg runnerCmd
+                ]
+    in
+    ( initModel, cmds )
 
 
 
