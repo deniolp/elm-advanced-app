@@ -1,6 +1,8 @@
 .idea
 elm-stuff
 node_modules
+server/node_modules
+server/local.db
 elm.js
 .DS_Store
 Lessons/Ports/bundle.js
