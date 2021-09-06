@@ -112,3 +112,12 @@ errorPanel error =
 
         Just msg ->
             div [ class "error" ] [ text msg ]
+
+
+
+-- subscriptions
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none

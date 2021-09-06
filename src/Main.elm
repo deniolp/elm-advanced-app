@@ -239,5 +239,19 @@ pageHeader _ =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    let
+        leaderBoardSub =
+            LeaderBoard.subscriptions model.leaderBoard
+
+        loginSub =
+            Login.subscriptions model.login
+
+        runnerSub =
+            Runner.subscriptions model.runner
+    in
+    Sub.batch
+        [ Sub.map LeaderBoardMsg leaderBoardSub
+        , Sub.map LoginMsg loginSub
+        , Sub.map RunnerMsg runnerSub
+        ]
