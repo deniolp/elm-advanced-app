@@ -9,7 +9,6 @@ import LeaderBoard
 import Login
 import Maybe exposing (withDefault)
 import Runner
-import Tuple exposing (first)
 import Url
 
 
@@ -111,33 +110,30 @@ update msg model =
 
         LeaderBoardMsg lbMsg ->
             let
-                newModel =
-                    { model
-                        | leaderBoard =
-                            first (LeaderBoard.update lbMsg model.leaderBoard)
-                    }
+                ( leaderBoardModel, cmd ) =
+                    LeaderBoard.update lbMsg model.leaderBoard
             in
-            ( newModel, Cmd.none )
+            ( { model | leaderBoard = leaderBoardModel }
+            , Cmd.map LeaderBoardMsg cmd
+            )
 
         LoginMsg loginMsg ->
             let
-                newModel =
-                    { model
-                        | login =
-                            first (Login.update loginMsg model.login)
-                    }
+                ( loginModel, cmd ) =
+                    Login.update loginMsg model.login
             in
-            ( newModel, Cmd.none )
+            ( { model | login = loginModel }
+            , Cmd.map LoginMsg cmd
+            )
 
         RunnerMsg runnerMsg ->
             let
-                newModel =
-                    { model
-                        | runner =
-                            first (Runner.update runnerMsg model.runner)
-                    }
+                ( runnerModel, cmd ) =
+                    Runner.update runnerMsg model.runner
             in
-            ( newModel, Cmd.none )
+            ( { model | runner = runnerModel }
+            , Cmd.map RunnerMsg cmd
+            )
 
 
 pageToFragment : Page -> String
