@@ -144,14 +144,13 @@ update msg model =
                 loggedIn =
                     token /= Nothing
             in
-            Debug.log "Updated model"
-                ( { model
-                    | login = loginModel
-                    , token = token
-                    , loggedIn = loggedIn
-                  }
-                , Cmd.map LoginMsg cmd
-                )
+            ( { model
+                | login = loginModel
+                , token = token
+                , loggedIn = loggedIn
+              }
+            , Cmd.map LoginMsg cmd
+            )
 
         RunnerMsg runnerMsg ->
             let

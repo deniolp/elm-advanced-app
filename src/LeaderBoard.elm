@@ -65,8 +65,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SearchInput query ->
-            Debug.log "Input query updated model"
-                ( { model | query = query }, Cmd.none )
+            ( { model | query = query }, Cmd.none )
 
         Search ->
             ( model, Cmd.none )

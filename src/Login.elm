@@ -4,7 +4,7 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http exposing (Error(..))
+import Http exposing (..)
 import Json.Decode as JD
 import Json.Encode as JE
 
