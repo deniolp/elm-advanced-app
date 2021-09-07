@@ -4,8 +4,8 @@ import Browser.Navigation as Nav
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Http
-import Json.Decode as JD exposing (field)
+import Http exposing (Error(..))
+import Json.Decode as JD
 import Json.Encode as JE
 
 
@@ -18,6 +18,14 @@ type alias Model =
     , password : String
     , error : Maybe String
     }
+
+
+type ErrorDetailed body
+    = BadUrl String
+    | Timeout
+    | NetworkError
+    | BadStatus Http.Metadata body
+    | BadBody Http.Metadata body String
 
 
 initModel : Model
@@ -42,24 +50,45 @@ type Msg
     | PasswordInput String
     | Submit
     | Error String
-    | LoginResponse (Result Http.Error String)
+    | LoginResponse (Result (ErrorDetailed String) ( Http.Metadata, String ))
 
 
 responseDecoder : JD.Decoder String
 responseDecoder =
-    field "token" JD.string
+    JD.field "token" JD.string
+
+
+expectJsonCustom : (Result (ErrorDetailed String) ( Http.Metadata, String ) -> msg) -> JD.Decoder String -> Http.Expect msg
+expectJsonCustom msg decoder =
+    Http.expectStringResponse msg <|
+        \response ->
+            case response of
+                Http.BadUrl_ url ->
+                    Err (BadUrl url)
+
+                Http.Timeout_ ->
+                    Err Timeout
+
+                Http.NetworkError_ ->
+                    Err NetworkError
+
+                Http.BadStatus_ metadata body ->
+                    Err (BadStatus metadata body)
+
+                Http.GoodStatus_ metadata body ->
+                    Result.mapError (BadBody metadata body) <|
+                        Result.mapError JD.errorToString
+                            (JD.decodeString (JD.map (\resp -> ( metadata, resp )) decoder) body)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe String )
 update msg model =
     case msg of
         UsernameInput username ->
-            Debug.log "Input username updated model"
-                ( { model | username = username }, Cmd.none, Nothing )
+            ( { model | username = username }, Cmd.none, Nothing )
 
         PasswordInput password ->
-            Debug.log "Input password updated model"
-                ( { model | password = password }, Cmd.none, Nothing )
+            ( { model | password = password }, Cmd.none, Nothing )
 
         Submit ->
             let
@@ -73,29 +102,31 @@ update msg model =
                                 ]
                                 |> JE.encode 4
                                 |> Http.stringBody "application/json"
-                        , expect = Http.expectJson LoginResponse responseDecoder
+                        , expect = expectJsonCustom LoginResponse responseDecoder
                         }
             in
             ( model, cmd, Nothing )
 
         Error error ->
-            Debug.log "Error updated model"
-                ( { model | error = Just error }, Cmd.none, Nothing )
+            ( { model | error = Just error }, Cmd.none, Nothing )
 
-        LoginResponse (Ok token) ->
-            ( initModel, Nav.load "#", Just token )
+        LoginResponse (Ok data) ->
+            ( initModel, Nav.load "#", Just (Tuple.second data) )
 
         LoginResponse (Err err) ->
             let
                 errorMsg =
                     case err of
-                        Http.BadStatus resp ->
-                            case resp of
+                        BadStatus meta body ->
+                            case meta.statusCode of
                                 401 ->
-                                    "resp.body"
+                                    body
 
                                 _ ->
-                                    "resp.status.message"
+                                    meta.statusText
+
+                        BadBody _ _ error ->
+                            error
 
                         _ ->
                             "Login Error"
