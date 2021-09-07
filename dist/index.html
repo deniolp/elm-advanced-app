@@ -13,8 +13,10 @@
 
   <script src="bundle.js"></script>
   <script>
+    var token = localStorage.getItem(`token`);
     var app = Elm.Main.init({
-      node: document.getElementById(`app`)
+      node: document.getElementById(`app`),
+      flags: {token}
     });
     app.ports.saveToken.subscribe((token) => localStorage.setItem(`token`, token));
   </script>

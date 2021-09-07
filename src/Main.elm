@@ -16,7 +16,7 @@ import Url
 -- main
 
 
-main : Program () Model Msg
+main : Program Flags Model Msg
 main =
     Browser.application
         { init = init
@@ -44,6 +44,11 @@ type alias Model =
     }
 
 
+type alias Flags =
+    { token : Maybe String
+    }
+
+
 type Page
     = NotFound
     | LeaderBoardPage
@@ -51,8 +56,8 @@ type Page
     | AddRunnerPage
 
 
-init : () -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
+init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
+init flags url key =
     let
         ( leaderBoardInitModel, leaderBoardCmd ) =
             LeaderBoard.init
@@ -70,8 +75,8 @@ init _ url key =
             , leaderBoard = leaderBoardInitModel
             , login = loginInitModel
             , runner = runnerInitModel
-            , token = Nothing
-            , loggedIn = False
+            , token = flags.token
+            , loggedIn = flags.token /= Nothing
             }
 
         cmds =
@@ -152,17 +157,16 @@ update msg model =
                         Nothing ->
                             Cmd.none
             in
-            Debug.log "Login?"
-                ( { model
-                    | login = loginModel
-                    , token = token
-                    , loggedIn = loggedIn
-                  }
-                , Cmd.batch
-                    [ Cmd.map LoginMsg cmd
-                    , saveTokenCmd
-                    ]
-                )
+            ( { model
+                | login = loginModel
+                , token = token
+                , loggedIn = loggedIn
+              }
+            , Cmd.batch
+                [ Cmd.map LoginMsg cmd
+                , saveTokenCmd
+                ]
+            )
 
         RunnerMsg runnerMsg ->
             let
