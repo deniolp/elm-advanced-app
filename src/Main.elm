@@ -56,6 +56,11 @@ type Page
     | AddRunnerPage
 
 
+authPages : List Page
+authPages =
+    [ AddRunnerPage ]
+
+
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
@@ -125,13 +130,16 @@ update msg model =
 
         UrlChanged url ->
             let
+                ( updatedPage, cmd ) =
+                    authRedirect (url |> fragmentToPage) model
+
                 newModel =
                     { model
-                        | page = url |> fragmentToPage
+                        | page = updatedPage
                         , url = url
                     }
             in
-            ( newModel, Cmd.none )
+            ( newModel, cmd )
 
         LeaderBoardMsg lbMsg ->
             let
@@ -219,6 +227,20 @@ fragmentToPage url =
             NotFound
 
 
+authForPage : Page -> Bool -> Bool
+authForPage page loggedIn =
+    loggedIn || not (List.member page authPages)
+
+
+authRedirect : Page -> Model -> ( Page, Cmd Msg )
+authRedirect page model =
+    if authForPage page model.loggedIn then
+        ( page, Cmd.none )
+
+    else
+        ( LoginPage, Nav.pushUrl model.key (LoginPage |> pageToFragment) )
+
+
 
 -- view
 
@@ -256,12 +278,21 @@ view model =
 
 
 authHeaderView : Model -> Html Msg
-authHeaderView model =
-    if model.loggedIn then
+authHeaderView { loggedIn } =
+    if loggedIn then
         a [ onClick Logout ] [ text "Logout" ]
 
     else
         a [ href "#login" ] [ text "Login" ]
+
+
+addRunnerLinkView : Model -> Html Msg
+addRunnerLinkView { loggedIn } =
+    if loggedIn then
+        a [ href "#add" ] [ text "Add Runner" ]
+
+    else
+        text ""
 
 
 pageHeader : Model -> Html Msg
@@ -270,7 +301,7 @@ pageHeader model =
         [ a [ href "#" ] [ text "Race Results" ]
         , ul []
             [ li []
-                [ a [ href "#add" ] [ text "Add Runner" ] ]
+                [ addRunnerLinkView model ]
             ]
         , ul []
             [ li []
