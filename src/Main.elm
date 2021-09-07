@@ -64,6 +64,15 @@ authPages =
 init : Flags -> Url.Url -> Nav.Key -> ( Model, Cmd Msg )
 init flags url key =
     let
+        page =
+            url |> fragmentToPage
+
+        loggedIn =
+            flags.token /= Nothing
+
+        ( updatedPage, cmd ) =
+            authRedirect page loggedIn key
+
         ( leaderBoardInitModel, leaderBoardCmd ) =
             LeaderBoard.init
 
@@ -76,12 +85,12 @@ init flags url key =
         initModel =
             { key = key
             , url = url
-            , page = url |> fragmentToPage
+            , page = updatedPage
             , leaderBoard = leaderBoardInitModel
             , login = loginInitModel
             , runner = runnerInitModel
             , token = flags.token
-            , loggedIn = flags.token /= Nothing
+            , loggedIn = loggedIn
             }
 
         cmds =
@@ -89,6 +98,7 @@ init flags url key =
                 [ Cmd.map LeaderBoardMsg leaderBoardCmd
                 , Cmd.map LoginMsg loginCmd
                 , Cmd.map RunnerMsg runnerCmd
+                , cmd
                 ]
     in
     ( initModel, cmds )
@@ -131,7 +141,7 @@ update msg model =
         UrlChanged url ->
             let
                 ( updatedPage, cmd ) =
-                    authRedirect (url |> fragmentToPage) model
+                    authRedirect (url |> fragmentToPage) model.loggedIn model.key
 
                 newModel =
                     { model
@@ -232,13 +242,13 @@ authForPage page loggedIn =
     loggedIn || not (List.member page authPages)
 
 
-authRedirect : Page -> Model -> ( Page, Cmd Msg )
-authRedirect page model =
-    if authForPage page model.loggedIn then
+authRedirect : Page -> Bool -> Nav.Key -> ( Page, Cmd Msg )
+authRedirect page loggedIn key =
+    if authForPage page loggedIn then
         ( page, Cmd.none )
 
     else
-        ( LoginPage, Nav.pushUrl model.key (LoginPage |> pageToFragment) )
+        ( LoginPage, Nav.pushUrl key (LoginPage |> pageToFragment) )
 
 
 
