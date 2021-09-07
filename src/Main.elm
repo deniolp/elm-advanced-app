@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Browser
 import Browser.Navigation as Nav
@@ -143,14 +143,26 @@ update msg model =
 
                 loggedIn =
                     token /= Nothing
+
+                saveTokenCmd =
+                    case token of
+                        Just jwt ->
+                            saveToken jwt
+
+                        Nothing ->
+                            Cmd.none
             in
-            ( { model
-                | login = loginModel
-                , token = token
-                , loggedIn = loggedIn
-              }
-            , Cmd.map LoginMsg cmd
-            )
+            Debug.log "Login?"
+                ( { model
+                    | login = loginModel
+                    , token = token
+                    , loggedIn = loggedIn
+                  }
+                , Cmd.batch
+                    [ Cmd.map LoginMsg cmd
+                    , saveTokenCmd
+                    ]
+                )
 
         RunnerMsg runnerMsg ->
             let
@@ -266,3 +278,10 @@ subscriptions model =
         , Sub.map LoginMsg loginSub
         , Sub.map RunnerMsg runnerSub
         ]
+
+
+
+-- ports
+
+
+port saveToken : String -> Cmd msg
