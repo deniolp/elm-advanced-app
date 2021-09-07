@@ -99,6 +99,7 @@ type Msg
     | LeaderBoardMsg LeaderBoard.Msg
     | LoginMsg Login.Msg
     | RunnerMsg Runner.Msg
+    | Logout
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -177,6 +178,14 @@ update msg model =
             , Cmd.map RunnerMsg cmd
             )
 
+        Logout ->
+            ( { model
+                | loggedIn = False
+                , token = Nothing
+              }
+            , deleteToken ()
+            )
+
 
 pageToFragment : Page -> String
 pageToFragment page =
@@ -246,8 +255,17 @@ view model =
     }
 
 
+authHeaderView : Model -> Html Msg
+authHeaderView model =
+    if model.loggedIn then
+        a [ onClick Logout ] [ text "Logout" ]
+
+    else
+        a [ href "#login" ] [ text "Login" ]
+
+
 pageHeader : Model -> Html Msg
-pageHeader _ =
+pageHeader model =
     header []
         [ a [ href "#" ] [ text "Race Results" ]
         , ul []
@@ -256,7 +274,7 @@ pageHeader _ =
             ]
         , ul []
             [ li []
-                [ a [ href "#login" ] [ text "Login" ] ]
+                [ authHeaderView model ]
             ]
         ]
 
@@ -289,3 +307,6 @@ subscriptions model =
 
 
 port saveToken : String -> Cmd msg
+
+
+port deleteToken : () -> Cmd msg

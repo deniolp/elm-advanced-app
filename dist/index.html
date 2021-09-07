@@ -13,12 +13,15 @@
 
   <script src="bundle.js"></script>
   <script>
-    var token = localStorage.getItem(`token`);
+    var TOKEN_KEY = `token`;
+
+    var token = localStorage.getItem(TOKEN_KEY);
     var app = Elm.Main.init({
       node: document.getElementById(`app`),
       flags: {token}
     });
-    app.ports.saveToken.subscribe((token) => localStorage.setItem(`token`, token));
+    app.ports.saveToken.subscribe((token) => localStorage.setItem(TOKEN_KEY, token));
+    app.ports.deleteToken.subscribe(() => localStorage.removeItem(TOKEN_KEY));
   </script>
 </body>
 
