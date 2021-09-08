@@ -1,6 +1,7 @@
 module Login exposing (..)
 
 import Browser.Navigation as Nav
+import ErrorDetailed exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -18,14 +19,6 @@ type alias Model =
     , password : String
     , error : Maybe String
     }
-
-
-type ErrorDetailed body
-    = BadUrl String
-    | Timeout
-    | NetworkError
-    | BadStatus Http.Metadata body
-    | BadBody Http.Metadata body String
 
 
 initModel : Model
@@ -64,19 +57,19 @@ expectJsonCustom msg decoder =
         \response ->
             case response of
                 Http.BadUrl_ url ->
-                    Err (BadUrl url)
+                    Err (ErrorDetailed.BadUrl url)
 
                 Http.Timeout_ ->
-                    Err Timeout
+                    Err ErrorDetailed.Timeout
 
                 Http.NetworkError_ ->
-                    Err NetworkError
+                    Err ErrorDetailed.NetworkError
 
                 Http.BadStatus_ metadata body ->
-                    Err (BadStatus metadata body)
+                    Err (ErrorDetailed.BadStatus metadata body)
 
                 Http.GoodStatus_ metadata body ->
-                    Result.mapError (BadBody metadata body) <|
+                    Result.mapError (ErrorDetailed.BadBody metadata body) <|
                         Result.mapError JD.errorToString
                             (JD.decodeString (JD.map (\resp -> ( metadata, resp )) decoder) body)
 
@@ -117,7 +110,7 @@ update msg model =
             let
                 errorMsg =
                     case err of
-                        BadStatus meta body ->
+                        ErrorDetailed.BadStatus meta body ->
                             case meta.statusCode of
                                 401 ->
                                     body
@@ -125,7 +118,7 @@ update msg model =
                                 _ ->
                                     meta.statusText
 
-                        BadBody _ _ error ->
+                        ErrorDetailed.BadBody _ _ error ->
                             error
 
                         _ ->
