@@ -1,13 +1,13 @@
 module Login exposing (..)
 
 import Browser.Navigation as Nav
-import ErrorDetailed exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http exposing (..)
 import Json.Decode as JD
 import Json.Encode as JE
+import Utils exposing (ErrorDetailed, expectJsonCustom)
 
 
 
@@ -51,29 +51,6 @@ responseDecoder =
     JD.field "token" JD.string
 
 
-expectJsonCustom : (Result (ErrorDetailed String) ( Http.Metadata, String ) -> msg) -> JD.Decoder String -> Http.Expect msg
-expectJsonCustom msg decoder =
-    Http.expectStringResponse msg <|
-        \response ->
-            case response of
-                Http.BadUrl_ url ->
-                    Err (ErrorDetailed.BadUrl url)
-
-                Http.Timeout_ ->
-                    Err ErrorDetailed.Timeout
-
-                Http.NetworkError_ ->
-                    Err ErrorDetailed.NetworkError
-
-                Http.BadStatus_ metadata body ->
-                    Err (ErrorDetailed.BadStatus metadata body)
-
-                Http.GoodStatus_ metadata body ->
-                    Result.mapError (ErrorDetailed.BadBody metadata body) <|
-                        Result.mapError JD.errorToString
-                            (JD.decodeString (JD.map (\resp -> ( metadata, resp )) decoder) body)
-
-
 update : Msg -> Model -> ( Model, Cmd Msg, Maybe String )
 update msg model =
     case msg of
@@ -110,7 +87,7 @@ update msg model =
             let
                 errorMsg =
                     case err of
-                        ErrorDetailed.BadStatus meta body ->
+                        Utils.BadStatus meta body ->
                             case meta.statusCode of
                                 401 ->
                                     body
@@ -118,7 +95,7 @@ update msg model =
                                 _ ->
                                     meta.statusText
 
-                        ErrorDetailed.BadBody _ _ error ->
+                        Utils.BadBody _ _ error ->
                             error
 
                         _ ->

@@ -6,6 +6,7 @@ import Html.Events exposing (..)
 import Http exposing (..)
 import Json.Decode as JD exposing (field)
 import Json.Encode as JE
+import Utils exposing (ErrorDetailed, expectJsonCustom)
 
 
 
@@ -56,7 +57,7 @@ type Msg
     | AgeInput String
     | BibInput String
     | Save
-    | SaveResponse (Result Http.Error String)
+    | SaveResponse (Result (ErrorDetailed String) ( Http.Metadata, String ))
 
 
 update : String -> Msg -> Model -> ( Model, Cmd Msg )
@@ -102,8 +103,16 @@ update token msg model =
             let
                 errMsg =
                     case err of
-                        Http.BadStatus _ ->
-                            "bhjhb"
+                        Utils.BadStatus meta body ->
+                            case meta.statusCode of
+                                400 ->
+                                    body
+
+                                _ ->
+                                    meta.statusText
+
+                        Utils.BadBody _ _ error ->
+                            error
 
                         _ ->
                             "Error Saving!"
@@ -153,7 +162,7 @@ post url headers body decoder =
         , headers = headers
         , url = url
         , body = body
-        , expect = Http.expectJson SaveResponse decoder
+        , expect = expectJsonCustom SaveResponse decoder
         , timeout = Nothing
         , tracker = Nothing
         }
