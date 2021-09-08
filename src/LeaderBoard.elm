@@ -1,9 +1,22 @@
-module LeaderBoard exposing (..)
+port module LeaderBoard exposing (..)
 
 import Debug exposing (toString)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Json.Decode as JD
+import Json.Decode.Pipeline as JDP
+import Json.Encode as JE
+
+
+
+-- ports
+
+
+port listenRunnersMsg : String -> Cmd msg
+
+
+port listen : (String -> msg) -> Sub msg
 
 
 
@@ -19,7 +32,7 @@ type alias Model =
 
 
 type alias Runner =
-    { id : Int
+    { id : String
     , name : String
     , location : String
     , age : Int
@@ -31,17 +44,24 @@ type alias Runner =
     }
 
 
-tempRunners : List Runner
-tempRunners =
-    [ Runner 1 "Denis Popov" "Kazan" 42 1234 0 1 1463154945381 0
-    , Runner 2 "Miko Lamus" "Kazan" 41 1238 0 1 1463154945382 0
-    ]
+type alias RunnerWsMsg =
+    { name : String
+    , runner : Runner
+    }
+
+
+
+-- tempRunners : List Runner
+-- tempRunners =
+--     [ Runner 1 "Denis Popov" "Kazan" 42 1234 0 1 1463154945381 0
+--     , Runner 2 "Miko Lamus" "Kazan" 41 1238 0 1 1463154945382 0
+--     ]
 
 
 initModel : Model
 initModel =
     { error = Nothing
-    , runners = tempRunners
+    , runners = []
     , query = ""
     , active = False
     }
@@ -49,7 +69,16 @@ initModel =
 
 init : ( Model, Cmd Msg )
 init =
-    ( initModel, Cmd.none )
+    ( initModel, listenRunnersMsg (encodeMsg "listen runners" JE.null) )
+
+
+encodeMsg : String -> JE.Value -> String
+encodeMsg name data =
+    JE.object
+        [ ( "name", JE.string name )
+        , ( "data", data )
+        ]
+        |> JE.encode 0
 
 
 
@@ -59,6 +88,7 @@ init =
 type Msg
     = SearchInput String
     | Search
+    | WsMessage String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -69,6 +99,49 @@ update msg model =
 
         Search ->
             ( model, Cmd.none )
+
+        WsMessage wsMsg ->
+            wsMessage wsMsg model
+
+
+wsMessage : String -> Model -> ( Model, Cmd Msg )
+wsMessage wsMsg model =
+    case JD.decodeString msgDecoder wsMsg of
+        Ok { name, runner } ->
+            case name of
+                "new runner" ->
+                    ( { model | runners = runner :: model.runners }
+                    , Cmd.none
+                    )
+
+                _ ->
+                    ( { model | error = Just ("Unrecognized Message: " ++ name) }
+                    , Cmd.none
+                    )
+
+        Err err ->
+            ( { model | error = Just (JD.errorToString err) }, Cmd.none )
+
+
+msgDecoder : JD.Decoder RunnerWsMsg
+msgDecoder =
+    JD.succeed RunnerWsMsg
+        |> JDP.required "name" JD.string
+        |> JDP.required "data" runnerDecoder
+
+
+runnerDecoder : JD.Decoder Runner
+runnerDecoder =
+    JD.succeed Runner
+        |> JDP.required "_id" JD.string
+        |> JDP.required "name" JD.string
+        |> JDP.required "location" JD.string
+        |> JDP.required "age" JD.int
+        |> JDP.required "bib" JD.int
+        |> JDP.hardcoded 0
+        |> JDP.required "lastMarkerDistance" JD.float
+        |> JDP.required "lastMarkerTime" JD.float
+        |> JDP.required "pace" JD.float
 
 
 
@@ -114,14 +187,14 @@ searchForm query =
 runnersTable : Model -> Html Msg
 runnersTable { runners } =
     runners
-        |> List.map runner
+        |> List.map runnerRow
         |> tbody []
         |> (\t -> [ runnersHeader, t ])
         |> table []
 
 
-runner : Runner -> Html Msg
-runner { name, location, age, bib, estimatedDistance } =
+runnerRow : Runner -> Html Msg
+runnerRow { name, location, age, bib, estimatedDistance } =
     tr []
         [ td [] [ text name ]
         , td [] [ text location ]
@@ -152,4 +225,4 @@ runnersHeader =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    listen WsMessage
