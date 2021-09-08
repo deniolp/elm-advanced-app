@@ -24,7 +24,14 @@ type alias Model =
     , bib : String
     , bibError : Maybe String
     , error : Maybe String
+    , status : Status
     }
+
+
+type Status
+    = Saving String
+    | Saved String
+    | NotSaved
 
 
 initModel : Model
@@ -39,6 +46,7 @@ initModel =
     , bib = ""
     , bibError = Nothing
     , error = Nothing
+    , status = NotSaved
     }
 
 
@@ -67,6 +75,7 @@ update token msg model =
             ( { model
                 | name = name
                 , nameError = Nothing
+                , status = NotSaved
               }
             , Cmd.none
             )
@@ -75,6 +84,7 @@ update token msg model =
             ( { model
                 | location = location
                 , locationError = Nothing
+                , status = NotSaved
               }
             , Cmd.none
             )
@@ -97,7 +107,7 @@ update token msg model =
                 ( updatedModel, Cmd.none )
 
         SaveResponse (Ok _) ->
-            ( initModel, Cmd.none )
+            ( { initModel | status = Saved "Runner Saved!" }, Cmd.none )
 
         SaveResponse (Err err) ->
             let
@@ -117,7 +127,12 @@ update token msg model =
                         _ ->
                             "Error Saving!"
             in
-            ( { model | error = Just errMsg }, Cmd.none )
+            ( { model
+                | error = Just errMsg
+                , status = NotSaved
+              }
+            , Cmd.none
+            )
 
 
 runnerEncoder : Model -> JE.Value
@@ -152,7 +167,7 @@ save token model =
         cmd =
             post "http://localhost:5000/runner" headers body decoder
     in
-    ( model, cmd )
+    ( { model | status = Saving "Saving Runner..." }, cmd )
 
 
 post : String -> List Http.Header -> Http.Body -> JD.Decoder String -> Cmd Msg
@@ -268,7 +283,7 @@ ageInput age model =
             else
                 Nothing
     in
-    ( { model | age = age, ageError = ageError }, Cmd.none )
+    ( { model | age = age, ageError = ageError, status = NotSaved }, Cmd.none )
 
 
 bibInput : String -> Model -> ( Model, Cmd Msg )
@@ -286,7 +301,7 @@ bibInput bib model =
             else
                 Nothing
     in
-    ( { model | bib = bib, bibError = bibError }, Cmd.none )
+    ( { model | bib = bib, bibError = bibError, status = NotSaved }, Cmd.none )
 
 
 
@@ -349,6 +364,18 @@ viewForm model =
             , div []
                 [ label [] []
                 , button [ type_ "submit" ] [ text "Save" ]
+                , span []
+                    [ text <|
+                        case model.status of
+                            Saving savingMsg ->
+                                savingMsg
+
+                            Saved savedMsg ->
+                                savedMsg
+
+                            NotSaved ->
+                                ""
+                    ]
                 ]
             ]
         ]

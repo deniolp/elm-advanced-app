@@ -257,7 +257,7 @@ authRedirect page loggedIn key =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "First Try!"
+    { title = "Race results"
     , body =
         [ let
             page =
