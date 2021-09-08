@@ -3,6 +3,9 @@ module Runner exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Http exposing (..)
+import Json.Decode as JD exposing (field)
+import Json.Encode as JE
 
 
 
@@ -53,10 +56,11 @@ type Msg
     | AgeInput String
     | BibInput String
     | Save
+    | SaveResponse (Result Http.Error String)
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : String -> Msg -> Model -> ( Model, Cmd Msg )
+update token msg model =
     case msg of
         NameInput name ->
             ( { model
@@ -81,7 +85,163 @@ update msg model =
             bibInput bib model
 
         Save ->
-            ( model, Cmd.none )
+            let
+                updatedModel =
+                    validate model
+            in
+            if isValid updatedModel then
+                save token updatedModel
+
+            else
+                ( updatedModel, Cmd.none )
+
+        SaveResponse (Ok _) ->
+            ( initModel, Cmd.none )
+
+        SaveResponse (Err err) ->
+            let
+                errMsg =
+                    case err of
+                        Http.BadStatus _ ->
+                            "bhjhb"
+
+                        _ ->
+                            "Error Saving!"
+            in
+            ( { model | error = Just errMsg }, Cmd.none )
+
+
+runnerEncoder : Model -> JE.Value
+runnerEncoder { name, location, age, bib } =
+    let
+        ageInt =
+            age |> String.toInt |> Maybe.withDefault 0
+
+        bibInt =
+            bib |> String.toInt |> Maybe.withDefault 0
+    in
+    JE.object
+        [ ( "name", JE.string name )
+        , ( "location", JE.string location )
+        , ( "age", JE.int ageInt )
+        , ( "bib", JE.int bibInt )
+        ]
+
+
+save : String -> Model -> ( Model, Cmd Msg )
+save token model =
+    let
+        headers =
+            [ Http.header "Authorization" ("Bearer " ++ token) ]
+
+        body =
+            Http.jsonBody <| runnerEncoder model
+
+        decoder =
+            field "_id" JD.string
+
+        cmd =
+            post "http://localhost:5000/runner" headers body decoder
+    in
+    ( model, cmd )
+
+
+post : String -> List Http.Header -> Http.Body -> JD.Decoder String -> Cmd Msg
+post url headers body decoder =
+    Http.request
+        { method = "POST"
+        , headers = headers
+        , url = url
+        , body = body
+        , expect = Http.expectJson SaveResponse decoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+isValid : Model -> Bool
+isValid model =
+    model.nameError
+        == Nothing
+        && model.locationError
+        == Nothing
+        && model.ageError
+        == Nothing
+        && model.bibError
+        == Nothing
+
+
+validate : Model -> Model
+validate model =
+    model
+        |> validateName
+        |> validateLocation
+        |> validateAge
+        |> validateBib
+
+
+validateName : Model -> Model
+validateName model =
+    if String.isEmpty model.name then
+        { model
+            | nameError = Just "Name is required"
+        }
+
+    else
+        { model
+            | nameError = Nothing
+        }
+
+
+validateLocation : Model -> Model
+validateLocation model =
+    if String.isEmpty model.location then
+        { model
+            | locationError = Just "Name is required"
+        }
+
+    else
+        { model
+            | locationError = Nothing
+        }
+
+
+validateAge : Model -> Model
+validateAge model =
+    let
+        ageInt =
+            model.age
+                |> String.toInt
+                |> Maybe.withDefault 0
+    in
+    if ageInt <= 0 then
+        { model
+            | ageError = Just "Age must be a positive number"
+        }
+
+    else
+        { model
+            | ageError = Nothing
+        }
+
+
+validateBib : Model -> Model
+validateBib model =
+    let
+        bibInt =
+            model.bib
+                |> String.toInt
+                |> Maybe.withDefault 0
+    in
+    if bibInt <= 0 then
+        { model
+            | bibError = Just "Bib must be a positive number"
+        }
+
+    else
+        { model
+            | bibError = Nothing
+        }
 
 
 ageInput : String -> Model -> ( Model, Cmd Msg )

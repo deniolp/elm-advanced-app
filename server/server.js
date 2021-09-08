@@ -20,7 +20,7 @@ const db = new Datastore(
   {filename: path.join(__dirname, 'local.db'),
     autoload: true,
   });
-require('dotenv').config({path: 'server/user'});
+require('dotenv').config({path: 'server/user.txt'});
 db.insert = Promise.promisify(db.insert);
 db.find = Promise.promisify(db.find);
 db.update = Promise.promisify(db.update);

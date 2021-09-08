@@ -190,7 +190,7 @@ update msg model =
         RunnerMsg runnerMsg ->
             let
                 ( runnerModel, cmd ) =
-                    Runner.update runnerMsg model.runner
+                    Runner.update (Maybe.withDefault "" model.token) runnerMsg model.runner
             in
             ( { model | runner = runnerModel }
             , Cmd.map RunnerMsg cmd

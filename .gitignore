@@ -3,6 +3,7 @@ elm-stuff
 node_modules
 server/node_modules
 server/local.db
+server/user.txt
 elm.js
 .DS_Store
 Lessons/Ports/bundle.js
