@@ -8,6 +8,7 @@ import Html.Events exposing (..)
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 import Json.Encode as JE
+import String exposing (toInt)
 import Time
 
 
@@ -234,15 +235,46 @@ runnersTable { runners } =
 
 
 runnerRow : Runner -> Html Msg
-runnerRow { name, location, age, bib, estimatedDistance } =
+runnerRow runner =
+    let
+        { name, location, age, bib, estimatedDistance } =
+            runner
+    in
     tr []
         [ td [] [ text name ]
         , td [] [ text location ]
         , td [] [ text (toString age) ]
         , td [] [ text (toString bib) ]
-        , td [] [ text "1 mi @ 08:30AM (TODO)" ]
+        , td [] [ lastMarker runner ]
         , td [] [ text (formatDistance estimatedDistance) ]
         ]
+
+
+lastMarker : Runner -> Html Msg
+lastMarker runner =
+    if runner.lastMarkerTime > 0 then
+        let
+            hour =
+                String.fromInt (Time.toHour Time.utc (Time.millisToPosix (round runner.lastMarkerTime)))
+
+            minute =
+                String.fromInt (Time.toMinute Time.utc (Time.millisToPosix (round runner.lastMarkerTime)))
+
+            second =
+                String.fromInt (Time.toSecond Time.utc (Time.millisToPosix (round runner.lastMarkerTime)))
+        in
+        text
+            (formatDistance runner.lastMarkerDistance
+                ++ " mi @ "
+                ++ hour
+                ++ ":"
+                ++ minute
+                ++ ":"
+                ++ second
+            )
+
+    else
+        text ""
 
 
 formatDistance : Float -> String
