@@ -7,6 +7,7 @@ import Html.Events exposing (..)
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 import Json.Encode as JE
+import Time
 
 
 
@@ -50,14 +51,6 @@ type alias RunnerWsMsg =
     }
 
 
-
--- tempRunners : List Runner
--- tempRunners =
---     [ Runner 1 "Denis Popov" "Kazan" 42 1234 0 1 1463154945381 0
---     , Runner 2 "Miko Lamus" "Kazan" 41 1238 0 1 1463154945382 0
---     ]
-
-
 initModel : Model
 initModel =
     { error = Nothing
@@ -89,6 +82,7 @@ type Msg
     = SearchInput String
     | Search
     | WsMessage String
+    | Tick Time.Posix
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -102,6 +96,32 @@ update msg model =
 
         WsMessage wsMsg ->
             wsMessage wsMsg model
+
+        Tick time ->
+            ( tick model time, Cmd.none )
+
+
+tick : Model -> Time.Posix -> Model
+tick model time =
+    let
+        updatedRunners =
+            List.map (advanceDistance time)
+                model.runners
+    in
+    { model | runners = updatedRunners }
+
+
+advanceDistance : Time.Posix -> Runner -> Runner
+advanceDistance time runner =
+    let
+        elapsedMinutes =
+            (toFloat (Time.posixToMillis time) - runner.lastMarkerTime) / 1000 / 60
+    in
+    if runner.lastMarkerTime > 0 then
+        { runner | estimatedDistance = runner.lastMarkerDistance + (runner.pace * elapsedMinutes) }
+
+    else
+        runner
 
 
 wsMessage : String -> Model -> ( Model, Cmd Msg )
@@ -244,4 +264,7 @@ runnersHeader =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    listen WsMessage
+    Sub.batch
+        [ listen WsMessage
+        , Time.every 1000 Tick
+        ]
