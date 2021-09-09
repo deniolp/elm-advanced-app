@@ -255,13 +255,25 @@ lastMarker runner =
     if runner.lastMarkerTime > 0 then
         let
             hour =
-                String.fromInt (Time.toHour Time.utc (Time.millisToPosix (round runner.lastMarkerTime)))
+                runner.lastMarkerTime
+                    |> round
+                    |> Time.millisToPosix
+                    |> Time.toHour Time.utc
+                    |> String.fromInt
 
             minute =
-                String.fromInt (Time.toMinute Time.utc (Time.millisToPosix (round runner.lastMarkerTime)))
+                runner.lastMarkerTime
+                    |> round
+                    |> Time.millisToPosix
+                    |> Time.toMinute Time.utc
+                    |> String.fromInt
 
             second =
-                String.fromInt (Time.toSecond Time.utc (Time.millisToPosix (round runner.lastMarkerTime)))
+                runner.lastMarkerTime
+                    |> round
+                    |> Time.millisToPosix
+                    |> Time.toSecond Time.utc
+                    |> String.fromInt
         in
         text
             (formatDistance runner.lastMarkerDistance
