@@ -30,6 +30,7 @@ type alias Model =
     { error : Maybe String
     , runners : List Runner
     , query : String
+    , searchTerm : Maybe String
     , active : Bool
     , zone : Time.Zone
     }
@@ -59,6 +60,7 @@ initModel =
     { error = Nothing
     , runners = []
     , query = ""
+    , searchTerm = Nothing
     , active = False
     , zone = Time.utc
     }
@@ -102,7 +104,15 @@ update msg model =
             ( { model | query = query }, Cmd.none )
 
         Search ->
-            ( model, Cmd.none )
+            let
+                searchTerm =
+                    if String.isEmpty model.query then
+                        Nothing
+
+                    else
+                        Just model.query
+            in
+            ( { model | searchTerm = searchTerm }, Cmd.none )
 
         WsMessage wsMsg ->
             wsMessage wsMsg model
@@ -207,22 +217,31 @@ view model =
     div [ class "main" ]
         [ errorPanel model.error
         , searchForm model.query
-        , List.map
+        , List.filter
             (\runner ->
-                let
-                    { name, location, age, bib, estimatedDistance } =
-                        runner
-                in
-                tr []
-                    [ td [] [ text name ]
-                    , td [] [ text location ]
-                    , td [] [ text (toString age) ]
-                    , td [] [ text (toString bib) ]
-                    , td [] [ lastMarker runner model.zone ]
-                    , td [] [ text (formatDistance estimatedDistance) ]
-                    ]
+                model.searchTerm
+                    |> Maybe.map
+                        (\term ->
+                            String.contains term runner.name
+                        )
+                    |> Maybe.withDefault True
             )
             model.runners
+            |> List.map
+                (\runner ->
+                    let
+                        { name, location, age, bib, estimatedDistance } =
+                            runner
+                    in
+                    tr []
+                        [ td [] [ text name ]
+                        , td [] [ text location ]
+                        , td [] [ text (toString age) ]
+                        , td [] [ text (toString bib) ]
+                        , td [] [ lastMarker runner model.zone ]
+                        , td [] [ text (formatDistance estimatedDistance) ]
+                        ]
+                )
             |> tbody []
             |> (\t -> [ runnersHeader, t ])
             |> table []
