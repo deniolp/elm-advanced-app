@@ -1,6 +1,7 @@
 port module LeaderBoard exposing (..)
 
 import Debug exposing (toString)
+import Flip exposing (flip)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -240,8 +241,22 @@ runnerRow { name, location, age, bib, estimatedDistance } =
         , td [] [ text (toString age) ]
         , td [] [ text (toString bib) ]
         , td [] [ text "1 mi @ 08:30AM (TODO)" ]
-        , td [] [ text (toString estimatedDistance) ]
+        , td [] [ text (formatDistance estimatedDistance) ]
         ]
+
+
+formatDistance : Float -> String
+formatDistance distance =
+    if distance <= 0 then
+        ""
+
+    else
+        distance
+            * 100
+            |> round
+            |> toFloat
+            |> flip (/) 100
+            |> toString
 
 
 runnersHeader : Html Msg
