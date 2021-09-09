@@ -8,7 +8,7 @@ import Html.Events exposing (..)
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 import Json.Encode as JE
-import String exposing (toInt)
+import Task
 import Time
 
 
@@ -31,6 +31,7 @@ type alias Model =
     , runners : List Runner
     , query : String
     , active : Bool
+    , zone : Time.Zone
     }
 
 
@@ -59,12 +60,18 @@ initModel =
     , runners = []
     , query = ""
     , active = False
+    , zone = Time.utc
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( initModel, listenRunnersMsg (encodeMsg "listen runners" JE.null) )
+    ( initModel
+    , Cmd.batch
+        [ listenRunnersMsg (encodeMsg "listen runners" JE.null)
+        , Task.perform AdjustTimeZone Time.here
+        ]
+    )
 
 
 encodeMsg : String -> JE.Value -> String
@@ -85,6 +92,7 @@ type Msg
     | Search
     | WsMessage String
     | Tick Time.Posix
+    | AdjustTimeZone Time.Zone
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -101,6 +109,11 @@ update msg model =
 
         Tick time ->
             ( tick model time, Cmd.none )
+
+        AdjustTimeZone newZone ->
+            ( { model | zone = newZone }
+            , Cmd.none
+            )
 
 
 tick : Model -> Time.Posix -> Model
@@ -194,7 +207,25 @@ view model =
     div [ class "main" ]
         [ errorPanel model.error
         , searchForm model.query
-        , runnersTable model
+        , List.map
+            (\runner ->
+                let
+                    { name, location, age, bib, estimatedDistance } =
+                        runner
+                in
+                tr []
+                    [ td [] [ text name ]
+                    , td [] [ text location ]
+                    , td [] [ text (toString age) ]
+                    , td [] [ text (toString bib) ]
+                    , td [] [ lastMarker runner model.zone ]
+                    , td [] [ text (formatDistance estimatedDistance) ]
+                    ]
+            )
+            model.runners
+            |> tbody []
+            |> (\t -> [ runnersHeader, t ])
+            |> table []
         ]
 
 
@@ -225,68 +256,52 @@ searchForm query =
         ]
 
 
-runnersTable : Model -> Html Msg
-runnersTable { runners } =
-    runners
-        |> List.map runnerRow
-        |> tbody []
-        |> (\t -> [ runnersHeader, t ])
-        |> table []
-
-
-runnerRow : Runner -> Html Msg
-runnerRow runner =
-    let
-        { name, location, age, bib, estimatedDistance } =
-            runner
-    in
-    tr []
-        [ td [] [ text name ]
-        , td [] [ text location ]
-        , td [] [ text (toString age) ]
-        , td [] [ text (toString bib) ]
-        , td [] [ lastMarker runner ]
-        , td [] [ text (formatDistance estimatedDistance) ]
-        ]
-
-
-lastMarker : Runner -> Html Msg
-lastMarker runner =
+lastMarker : Runner -> Time.Zone -> Html Msg
+lastMarker runner zone =
     if runner.lastMarkerTime > 0 then
         let
             hour =
                 runner.lastMarkerTime
                     |> round
                     |> Time.millisToPosix
-                    |> Time.toHour Time.utc
+                    |> Time.toHour zone
                     |> String.fromInt
 
             minute =
                 runner.lastMarkerTime
                     |> round
                     |> Time.millisToPosix
-                    |> Time.toMinute Time.utc
+                    |> Time.toMinute zone
                     |> String.fromInt
 
             second =
                 runner.lastMarkerTime
                     |> round
                     |> Time.millisToPosix
-                    |> Time.toSecond Time.utc
+                    |> Time.toSecond zone
                     |> String.fromInt
         in
         text
             (formatDistance runner.lastMarkerDistance
                 ++ " mi @ "
-                ++ hour
+                ++ addZero hour
                 ++ ":"
-                ++ minute
+                ++ addZero minute
                 ++ ":"
-                ++ second
+                ++ addZero second
             )
 
     else
         text ""
+
+
+addZero : String -> String
+addZero minute =
+    if Maybe.withDefault 0 (String.toInt minute) < 10 then
+        "0" ++ minute
+
+    else
+        minute
 
 
 formatDistance : Float -> String
